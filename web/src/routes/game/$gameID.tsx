@@ -21,6 +21,7 @@ import Chatbox from "@/components/ChatBox";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/AuthContext";
 import { getCsrfToken } from "@/lib/csrf";
+import { apiUrl } from "@/lib/apiOrigin";
 import {
   applyClaimEdge,
   isEdgeFree,
@@ -302,10 +303,14 @@ function RouteComponent() {
   const handleQuitGame = async () => {
     if (gameState?.game_id && user?.userID && !isGameFinished(gameState)) {
       try {
-        await fetch(`/api/v1/games/${gameState.game_id}/forfeit`, {
-          method: "POST",
-          headers: { "X-CSRF-Token": getCsrfToken() || "" },
-        });
+        await fetch(
+          apiUrl(`/api/v1/games/${gameState.game_id}/forfeit`),
+          {
+            method: "POST",
+            credentials: "include",
+            headers: { "X-CSRF-Token": getCsrfToken() || "" },
+          },
+        );
       } catch (error) {
         console.error("Failed to forfeit game:", error);
       }
@@ -360,7 +365,7 @@ function RouteComponent() {
       try {
         playEdgeClick();
 
-        const response = await fetch(`/api/v1/games/${gameId}/move`, {
+        const response = await fetch(apiUrl(`/api/v1/games/${gameId}/move`), {
           method: "POST",
           credentials: "include",
           headers: {

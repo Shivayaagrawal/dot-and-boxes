@@ -9,6 +9,7 @@ import {
   useCallback,
 } from "react";
 import { useAuth } from "./AuthContext";
+import { getWebSocketUrl } from "./lib/apiOrigin";
 import { Message } from "./types/websocket";
 
 interface WebSocketContextValue {
@@ -31,10 +32,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const subscribers = useRef<Set<(message: Message) => void>>(new Set());
   const [connected, setConnected] = useState(false);
 
-  const host = window.location.host;
-  const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
-  const apiURl = `${wsScheme}://${host}/api/v1/ws`;
-
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
 
   //TODO: Turn this into a custom hook
@@ -52,7 +49,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     if (socket.current) return;
 
     const connect = () => {
-      const ws = new WebSocket(apiURl);
+      const ws = new WebSocket(getWebSocketUrl());
       socket.current = ws;
       ws.onopen = () => {
         setConnected(true);

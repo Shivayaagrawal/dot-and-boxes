@@ -27,6 +27,7 @@ import {
   Link2,
 } from "lucide-react";
 import { getCsrfToken } from "@/lib/csrf";
+import { apiUrl } from "@/lib/apiOrigin";
 import { hasCompletedLobbyNamePrompt } from "@/lib/lobbyDisplay";
 import { LobbyPixiBackdrop } from "@/components/LobbyPixiBackdrop";
 import { pixelUi } from "@/lib/pixelUi";
@@ -68,7 +69,7 @@ function LobbyPage() {
   } = useQuery<Lobby, Error>({
     queryKey: ["lobby", lobbyID],
     queryFn: async () => {
-      const res = await fetch(`/api/v1/lobbies/${lobbyID}`, {
+      const res = await fetch(apiUrl(`/api/v1/lobbies/${lobbyID}`), {
         credentials: "include",
       });
       if (!res.ok) {
@@ -133,9 +134,10 @@ function LobbyPage() {
   const leaveLobbyQuietly = useCallback(() => {
     if (isGameStartingRef.current || hasLeftRef.current) return;
     hasLeftRef.current = true;
-    fetch(`/api/v1/lobbies/${lobbyID}/leave`, {
+    fetch(apiUrl(`/api/v1/lobbies/${lobbyID}/leave`), {
       method: "POST",
       keepalive: true,
+      credentials: "include",
       headers: { "X-CSRF-Token": getCsrfToken() || "" },
     });
   }, [lobbyID]);
@@ -146,7 +148,10 @@ function LobbyPage() {
       hasLeftRef.current = true;
       const csrfData = new FormData();
       csrfData.append("_csrf", getCsrfToken() || "");
-      navigator.sendBeacon(`/api/v1/lobbies/${lobbyID}/leave`, csrfData);
+      navigator.sendBeacon(
+        apiUrl(`/api/v1/lobbies/${lobbyID}/leave`),
+        csrfData,
+      );
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -237,8 +242,9 @@ function LobbyPage() {
 
     hasAttemptedRejoin.current = true;
 
-    fetch(`/api/v1/lobbies/${lobbyID}/join`, {
+    fetch(apiUrl(`/api/v1/lobbies/${lobbyID}/join`), {
       method: "POST",
+      credentials: "include",
       headers: { "X-CSRF-Token": getCsrfToken() || "" },
     })
       .then((res) => {
@@ -265,8 +271,9 @@ function LobbyPage() {
       const playerIds = lobby.players?.map((p) => p.user_id) ?? [];
 
       // Create game (server publishes game:new to lobby:${lobbyID} for all subscribers)
-      const res = await fetch(`/api/v1/games`, {
+      const res = await fetch(apiUrl(`/api/v1/games`), {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-CSRF-Token": getCsrfToken() || "",
@@ -294,8 +301,9 @@ function LobbyPage() {
       });
 
       // Remove lobby after navigation; do not block the host on this request
-      void fetch(`/api/v1/lobbies/${lobbyID}`, {
+      void fetch(apiUrl(`/api/v1/lobbies/${lobbyID}`), {
         method: "DELETE",
+        credentials: "include",
         headers: { "X-CSRF-Token": getCsrfToken() || "" },
       }).catch(() => {
         /* non-fatal; lobby may be cleaned up later */
@@ -325,8 +333,9 @@ function LobbyPage() {
     setIsTogglingReady(true);
 
     try {
-      const res = await fetch(`/api/v1/lobbies/${lobbyID}/ready`, {
+      const res = await fetch(apiUrl(`/api/v1/lobbies/${lobbyID}/ready`), {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-CSRF-Token": getCsrfToken() || "",
@@ -362,8 +371,9 @@ function LobbyPage() {
     hasLeftRef.current = true;
 
     try {
-      const res = await fetch(`/api/v1/lobbies/${lobbyID}/leave`, {
+      const res = await fetch(apiUrl(`/api/v1/lobbies/${lobbyID}/leave`), {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-CSRF-Token": getCsrfToken() || "",

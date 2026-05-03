@@ -12,9 +12,13 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AuthProvider } from "./AuthContext";
 import { WebSocketProvider } from "./WebSocketContext";
 import { getCsrfToken } from "./lib/csrf";
+import { API_ORIGIN } from "./lib/apiOrigin";
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
 import { PixiLoaderPersistent } from "./components/PixiLoaderPersistent";
 import { router } from "./router";
+
+axios.defaults.baseURL = API_ORIGIN || undefined;
+axios.defaults.withCredentials = true;
 
 // Attach CSRF token to all state-changing axios requests
 axios.interceptors.request.use((config) => {
