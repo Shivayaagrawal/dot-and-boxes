@@ -2,6 +2,7 @@ package lobby
 
 import (
 	"dango/internal/events"
+	"dango/internal/httpsession"
 	"fmt"
 	"net/http"
 	"time"
@@ -57,8 +58,10 @@ func (h *LobbyHandler) CreateLobby(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "board_size must be between 5 and 10"})
 	}
 
-	// Extract token from echo context
-	userToken := c.Get("user").(*jwt.Token)
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
+	}
 	claims := userToken.Claims.(jwt.MapClaims)
 
 	// Extract "sub"
@@ -135,8 +138,10 @@ func (h *LobbyHandler) JoinLobby(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "missing lobby ID"})
 	}
 
-	// Extract user from JWT
-	userToken := c.Get("user").(*jwt.Token)
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
+	}
 	claims := userToken.Claims.(jwt.MapClaims)
 	userIDFloat, ok := claims["sub"].(float64)
 	if !ok {
@@ -202,7 +207,10 @@ func (h *LobbyHandler) GetLobby(c echo.Context) error {
 	if lobby == nil {
 		return c.JSON(http.StatusNotFound, map[string]string{"error": "lobby not found"})
 	}
-	userToken := c.Get("user").(*jwt.Token)
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
+	}
 	claims := userToken.Claims.(jwt.MapClaims)
 	userIDFloat, ok := claims["sub"].(float64)
 	if !ok {
@@ -235,8 +243,10 @@ func (h *LobbyHandler) ToggleReady(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "missing lobby ID"})
 	}
 
-	// Extract user from JWT
-	userToken := c.Get("user").(*jwt.Token)
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
+	}
 	claims := userToken.Claims.(jwt.MapClaims)
 	userIDFloat, ok := claims["sub"].(float64)
 	if !ok {
@@ -305,7 +315,10 @@ func (h *LobbyHandler) LeaveLobby(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "missing lobby ID"})
 	}
 
-	userToken := c.Get("user").(*jwt.Token)
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
+	}
 	claims := userToken.Claims.(jwt.MapClaims)
 	userIDFloat, ok := claims["sub"].(float64)
 	if !ok {

@@ -1,6 +1,7 @@
 package token
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -27,4 +28,15 @@ func GenerateToken(userID int, username string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString(key)
+}
+
+// ParseSession validates a JWT from the DnB-Session cookie (HS256, same key as GenerateToken).
+// Claims are available as jwt.MapClaims (e.g. "sub", "username") to match existing handlers.
+func ParseSession(tokenString string) (*jwt.Token, error) {
+	return jwt.ParseWithClaims(tokenString, jwt.MapClaims{}, func(t *jwt.Token) (any, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method %v", t.Header["alg"])
+		}
+		return key, nil
+	})
 }

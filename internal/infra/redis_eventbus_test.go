@@ -8,14 +8,13 @@ import (
 
 	"dango/internal/events"
 	"dango/internal/infra"
-
-	"github.com/redis/go-redis/v9"
+	"dango/internal/testutil"
 )
 
 func TestRedisEventBus(t *testing.T) {
 	ctx := context.Background()
 
-	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379", DB: 1})
+	rdb := testutil.RedisClientForTests(t)
 	bus := infra.NewRedisEventBus(rdb)
 
 	received := make(chan events.Event, 1)

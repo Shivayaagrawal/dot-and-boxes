@@ -8,22 +8,14 @@ import (
 	"dango/internal/events"
 	"dango/internal/infra"
 	"dango/internal/lobby"
-
-	"github.com/redis/go-redis/v9"
+	"dango/internal/testutil"
 )
-
-func setupRedis() *redis.Client {
-	return redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		DB:   1,
-	})
-}
 
 func TestLobbyServiceWithRedisEventBus(t *testing.T) {
 	ctx := context.Background()
-	redisClient := setupRedis()
-	redisClient.FlushDB(ctx)
-	defer redisClient.FlushDB(ctx)
+	redisClient := testutil.RedisClientForTests(t)
+	testutil.ResetTestRedis(t, redisClient)
+	defer testutil.ResetTestRedis(t, redisClient)
 
 	repo := infra.NewRedisLobbyRepository(redisClient)
 	eventBus := infra.NewRedisEventBus(redisClient)

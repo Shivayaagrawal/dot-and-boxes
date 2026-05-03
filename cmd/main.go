@@ -438,24 +438,15 @@ func (app *App) setupRoutes(
 	statsHandler *stats.StatsHandler,
 	manager *websocket.Manager,
 ) {
-	// Public routes with rate limiting (guest-only: login/signup and /users/me disabled for now)
 	public := app.echo.Group("/api/v1")
-	// public.POST("/login", loginHandler.Login, newAuthRateLimiter(12*time.Second, 5))
-	// public.POST("/users", userHandler.CreateUser, newAuthRateLimiter(20*time.Second, 3))
-	public.POST("/guest", loginHandler.GuestLogin, newAuthRateLimiter(6*time.Second, 5)) // ~10 per minute
-	// public.GET("/metrics", app.handleMetrics)
+	public.POST("/guest", loginHandler.GuestLogin, newAuthRateLimiter(6*time.Second, 5))
 
 	public.GET("/stats/leaderboard", statsHandler.GetLeaderboard)
 
-	// WebSocket
 	public.GET("/ws", manager.ServeWs)
 
-	// Users
 	public.GET("/users/:userId", userHandler.FindByID)
-	// public.GET("/users/me", userHandler.GetMe)
-	// public.GET("/users", userHandler.GetAllUsers)
 
-	// Lobby
 	public.GET("/lobbies", lobbyHandler.GetAllLobbies)
 	public.POST("/lobbies", lobbyHandler.CreateLobby, newAuthRateLimiter(100*time.Millisecond, 10))
 	public.POST("/lobbies/:lobbyId/join", lobbyHandler.JoinLobby)
@@ -464,13 +455,8 @@ func (app *App) setupRoutes(
 	public.POST("/lobbies/:lobbyId/leave", lobbyHandler.LeaveLobby)
 	public.DELETE("/lobbies/:lobbyId", lobbyHandler.DeleteLobby)
 
-	// Auth
 	public.POST("/logout", loginHandler.Logout)
 
-	// Users (upgrade)
-	// public.POST("/users/upgrade", userHandler.UpgradeGuest)
-
-	// Game
 	public.POST("/games", gameHandler.CreateGame)
 	public.GET("/games/history", gameHandler.GetGameHistory)
 	public.GET("/games/:gameId/state", gameHandler.GetGameState)
@@ -480,13 +466,10 @@ func (app *App) setupRoutes(
 	public.GET("/games/:gameId/timer", gameHandler.GetTimerState)
 	public.GET("/games/:gameId/events", gameHandler.GetGameEvents)
 
-	// Chat (rate limited to prevent excessive polling)
-	chatRateLimiter := newAuthRateLimiter(2*time.Second, 10) // ~30 per minute, burst 10
+	chatRateLimiter := newAuthRateLimiter(2*time.Second, 10)
 	public.GET("/chat", chatHandler.GetGlobalMessages, chatRateLimiter)
 	public.GET("/games/:gameId/chat", chatHandler.GetAllGameMessage, chatRateLimiter)
 
-	// Stats
-	// public.GET("/stats/me", statsHandler.GetMyStats)
 	public.GET("/stats/users/:userId", statsHandler.GetUserStats)
 
 }

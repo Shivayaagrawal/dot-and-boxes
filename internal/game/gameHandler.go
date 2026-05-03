@@ -2,6 +2,7 @@ package game
 
 import (
 	"dango/internal/events"
+	"dango/internal/httpsession"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -61,9 +62,8 @@ func (h *GameHandler) GetGameState(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid game ID"})
 	}
 
-	// Subscribe user to game
-	if userToken := c.Get("user"); userToken != nil {
-		if claims := userToken.(*jwt.Token).Claims.(jwt.MapClaims); claims != nil {
+	if userToken := httpsession.SessionJWTOptional(c); userToken != nil {
+		if claims := userToken.Claims.(jwt.MapClaims); claims != nil {
 			if userIDFloat, ok := claims["sub"].(float64); ok {
 				userID := int(userIDFloat)
 				topic := fmt.Sprintf("game:%d", gameID)
@@ -150,7 +150,10 @@ func (h *GameHandler) ForfeitGame(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid game ID"})
 	}
 
-	userToken := c.Get("user").(*jwt.Token)
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
+	}
 	claims := userToken.Claims.(jwt.MapClaims)
 	userIDFloat, ok := claims["sub"].(float64)
 	if !ok {
@@ -167,9 +170,9 @@ func (h *GameHandler) ForfeitGame(c echo.Context) error {
 }
 
 func (h *GameHandler) GetGameHistory(c echo.Context) error {
-	userToken, ok := c.Get("user").(*jwt.Token)
-	if !ok {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "unauthenticated"})
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
 	}
 	claims, ok := userToken.Claims.(jwt.MapClaims)
 	if !ok || !userToken.Valid {

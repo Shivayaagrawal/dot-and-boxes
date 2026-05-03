@@ -2,6 +2,7 @@ package user
 
 import (
 	"dango/internal/auth/token"
+	"dango/internal/httpsession"
 	dnbCookies "dango/internal/cookies"
 	"errors"
 	"log/slog"
@@ -93,10 +94,9 @@ func (h *UserHandler) FindByID(c echo.Context) error {
 
 func (h *UserHandler) GetMe(c echo.Context) error {
 	ctx := c.Request().Context()
-	// Get the JWT token object injected by echo-jwt middleware
-	userToken, ok := c.Get("user").(*jwt.Token)
-	if !ok {
-		return echo.NewHTTPError(http.StatusUnauthorized, "unauthenticated")
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
 	}
 
 	// Extract claims
@@ -126,9 +126,9 @@ func (h *UserHandler) GetMe(c echo.Context) error {
 func (h *UserHandler) UpgradeGuest(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	userToken, ok := c.Get("user").(*jwt.Token)
-	if !ok {
-		return echo.NewHTTPError(http.StatusUnauthorized, "unauthenticated")
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
 	}
 	claims, ok := userToken.Claims.(jwt.MapClaims)
 	if !ok || !userToken.Valid {

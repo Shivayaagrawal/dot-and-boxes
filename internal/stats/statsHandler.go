@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"dango/internal/httpsession"
+
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
@@ -17,9 +19,9 @@ func NewStatsHandler(service *StatsService) *StatsHandler {
 }
 
 func (h *StatsHandler) GetMyStats(c echo.Context) error {
-	userToken, ok := c.Get("user").(*jwt.Token)
-	if !ok {
-		return echo.NewHTTPError(http.StatusUnauthorized, "unauthenticated")
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
 	}
 
 	claims, ok := userToken.Claims.(jwt.MapClaims)

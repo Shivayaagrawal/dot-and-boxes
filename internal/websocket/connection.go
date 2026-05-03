@@ -3,6 +3,7 @@ package websocket
 import (
 	"context"
 	"dango/internal/events"
+	"dango/internal/httpsession"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -255,10 +256,9 @@ func (m *Manager) ServeWs(c echo.Context) error {
 		return err
 	}
 
-	// Extract the JWT token from Echo context
-	userToken, ok := c.Get("user").(*jwt.Token)
-	if !ok {
-		return echo.NewHTTPError(http.StatusUnauthorized, "unauthenticated")
+	userToken, err := httpsession.SessionJWT(c)
+	if err != nil {
+		return err
 	}
 
 	// Extract claims

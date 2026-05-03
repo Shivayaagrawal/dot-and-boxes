@@ -57,7 +57,6 @@ func (s *LobbyService) CreateLobby(ctx context.Context, hostID int64, username s
 		return nil, err
 	}
 
-	// When websockets  readsd from "global:lobbies", they will get this event from event bus and emit to topic subscribers
 	s.bus.Publish(ctx, "global:lobbies", events.Event{Topic: "global:lobbies", Type: "lobby_created", Payload: payloadBytes})
 
 	return lobby, nil

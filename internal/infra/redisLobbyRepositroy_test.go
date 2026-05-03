@@ -7,25 +7,16 @@ import (
 
 	"dango/internal/infra"
 	"dango/internal/lobby"
-
-	"github.com/redis/go-redis/v9"
+	"dango/internal/testutil"
 )
-
-func setupRedis() *redis.Client {
-	return redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-		DB:   1, // use test DB
-	})
-}
 
 func TestRedisLobbyRepository_CRUD(t *testing.T) {
 	ctx := context.Background()
-	client := setupRedis()
+	client := testutil.RedisClientForTests(t)
 	repo := infra.NewRedisLobbyRepository(client)
 
-	// clean up before and after
-	client.FlushDB(ctx)
-	defer client.FlushDB(ctx)
+	testutil.ResetTestRedis(t, client)
+	defer testutil.ResetTestRedis(t, client)
 
 	l := &lobby.Lobby{
 		LobbyID:     "lobby1",
