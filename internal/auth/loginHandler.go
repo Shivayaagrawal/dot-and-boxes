@@ -3,6 +3,7 @@ package auth
 import (
 	"dango/internal/auth/token"
 	dnbCookies "dango/internal/cookies"
+	"dango/internal/httpsession"
 	"dango/internal/user"
 	"log/slog"
 	"net/http"
@@ -104,6 +105,20 @@ func (h *LoginHandler) GuestLogin(c echo.Context) error {
 	h.logger.Info("Guest user created", "userID", guest.UserID, "username", guest.Username)
 
 	return c.JSON(http.StatusOK, guest)
+}
+
+// WsBridgeToken returns the current session JWT for WebSocket connections that target the API
+// host directly (cross-origin). The browser cannot send HttpOnly cookies to another origin; the
+// client passes this value as the `token` query parameter on /api/v1/ws. Requires a valid session.
+func (h *LoginHandler) WsBridgeToken(c echo.Context) error {
+	if _, err := httpsession.SessionJWT(c); err != nil {
+		return err
+	}
+	ck, err := c.Cookie("DnB-Session")
+	if err != nil || ck.Value == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing session")
+	}
+	return c.JSON(http.StatusOK, map[string]string{"token": ck.Value})
 }
 
 func (h *LoginHandler) Logout(c echo.Context) error {

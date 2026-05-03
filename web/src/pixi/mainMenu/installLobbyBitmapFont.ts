@@ -1,4 +1,5 @@
 import { BitmapFont } from "pixi.js";
+import { uninstallBitmapFontIfInstalled } from "@/pixi/uninstallBitmapFontIfInstalled";
 
 export const LOBBY_FONT_NAME = "DnBoxesLobbyPixel";
 
@@ -10,11 +11,7 @@ const FONT_CHARS: (string | [string, string])[] = [
 ];
 
 export function installLobbyBitmapFont(): boolean {
-  try {
-    BitmapFont.uninstall(LOBBY_FONT_NAME);
-  } catch {
-    /* noop */
-  }
+  uninstallBitmapFontIfInstalled(LOBBY_FONT_NAME);
 
   try {
     BitmapFont.install({
@@ -54,9 +51,5 @@ export function installLobbyBitmapFont(): boolean {
 }
 
 export function uninstallLobbyBitmapFont(): void {
-  try {
-    BitmapFont.uninstall(LOBBY_FONT_NAME);
-  } catch {
-    /* noop */
-  }
+  uninstallBitmapFontIfInstalled(LOBBY_FONT_NAME);
 }

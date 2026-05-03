@@ -6,6 +6,7 @@ import {
   Container,
   Graphics,
 } from "pixi.js";
+import { uninstallBitmapFontIfInstalled } from "@/pixi/uninstallBitmapFontIfInstalled";
 
 /** Marketing splash: dismiss only after Pixi has painted at least once (not tied to /play boot). */
 const MIN_SPLASH_MS = 1200;
@@ -130,11 +131,7 @@ export function DeployLoadingOverlay({ onComplete }: DeployLoadingOverlayProps) 
         return;
       }
 
-      try {
-        BitmapFont.uninstall(FONT_NAME);
-      } catch {
-        /* noop */
-      }
+      uninstallBitmapFontIfInstalled(FONT_NAME);
 
       try {
         BitmapFont.install({
@@ -338,11 +335,7 @@ export function DeployLoadingOverlay({ onComplete }: DeployLoadingOverlayProps) 
       cancelled = true;
       if (safetyTimer !== undefined) window.clearTimeout(safetyTimer);
       resizeCleanup?.();
-      try {
-        BitmapFont.uninstall(FONT_NAME);
-      } catch {
-        /* noop */
-      }
+      uninstallBitmapFontIfInstalled(FONT_NAME);
       if (app.renderer) {
         app.destroy(
           { removeView: true, releaseGlobalResources: true },

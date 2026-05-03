@@ -444,6 +444,7 @@ func (app *App) setupRoutes(
 	public.GET("/stats/leaderboard", statsHandler.GetLeaderboard)
 
 	public.GET("/ws", manager.ServeWs)
+	public.GET("/ws-token", loginHandler.WsBridgeToken)
 
 	public.GET("/users/:userId", userHandler.FindByID)
 

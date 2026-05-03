@@ -9,7 +9,7 @@ import {
   useCallback,
 } from "react";
 import { useAuth } from "./AuthContext";
-import { getWebSocketUrl } from "./lib/apiOrigin";
+import { getWebSocketUrlAsync } from "./lib/apiOrigin";
 import { Message } from "./types/websocket";
 
 interface WebSocketContextValue {
@@ -46,51 +46,72 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       return;
     }
 
-    if (socket.current) return;
+    let cancelled = false;
 
-    const connect = () => {
-      const ws = new WebSocket(getWebSocketUrl());
-      socket.current = ws;
-      ws.onopen = () => {
-        setConnected(true);
-        if (reconnectTimeout.current) {
-          clearTimeout(reconnectTimeout.current);
-          reconnectTimeout.current = null;
-        }
-        // set only once connected
-      };
-      ws.onmessage = (event: MessageEvent<string>) => {
-        const message = JSON.parse(event.data) as Message;
-        subscribers.current.forEach((cb) => {
-          cb(message);
-        });
-      };
-      ws.onclose = () => {
-        setConnected(false);
-        socket.current = null;
-        // Do not clear subscribers — they must survive reconnect so pages keep handling
-        // messages. Stale handlers are removed when components unmount via unsubscribe().
-        reconnectTimeout.current ??= setTimeout(connect, 1000);
-      };
-      ws.onerror = (err) => {
-        console.error("WebSocket error", err);
-        ws.close();
-      };
+    const scheduleReconnect = () => {
+      if (cancelled) return;
+      reconnectTimeout.current ??= setTimeout(() => {
+        reconnectTimeout.current = null;
+        void attemptConnect();
+      }, 1000);
     };
 
-    connect();
+    const attemptConnect = async () => {
+      if (cancelled) return;
+      try {
+        const url = await getWebSocketUrlAsync();
+        if (cancelled) return;
+        const ws = new WebSocket(url);
+        if (cancelled) {
+          ws.close();
+          return;
+        }
+        socket.current = ws;
+        ws.onopen = () => {
+          setConnected(true);
+          if (reconnectTimeout.current) {
+            clearTimeout(reconnectTimeout.current);
+            reconnectTimeout.current = null;
+          }
+        };
+        ws.onmessage = (event: MessageEvent<string>) => {
+          const message = JSON.parse(event.data) as Message;
+          subscribers.current.forEach((cb) => {
+            cb(message);
+          });
+        };
+        ws.onclose = () => {
+          setConnected(false);
+          socket.current = null;
+          // Do not clear subscribers — they must survive reconnect so pages keep handling
+          // messages. Stale handlers are removed when components unmount via unsubscribe().
+          scheduleReconnect();
+        };
+        ws.onerror = (err) => {
+          console.error("WebSocket error", err);
+          ws.close();
+        };
+      } catch (e) {
+        console.error("WebSocket connect failed", e);
+        scheduleReconnect();
+      }
+    };
+
+    void attemptConnect();
 
     return () => {
+      cancelled = true;
       if (socket.current) {
         socket.current.close();
         socket.current = null;
-        subscribers.current.clear();
       }
+      subscribers.current.clear();
 
       if (reconnectTimeout.current) {
         clearTimeout(reconnectTimeout.current);
         reconnectTimeout.current = null;
       }
+      setConnected(false);
     };
   }, [isAuthenticated]);
 

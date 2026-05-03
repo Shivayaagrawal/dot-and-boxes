@@ -2,6 +2,7 @@ package httpsession
 
 import (
 	"net/http"
+	"strings"
 
 	"dango/internal/auth/token"
 
@@ -36,4 +37,26 @@ func SessionJWTOptional(c echo.Context) *jwt.Token {
 		return nil
 	}
 	return tok
+}
+
+// SessionJWTForWebSocket validates the session from the DnB-Session cookie or from the `token`
+// query parameter (same JWT). The query path supports browsers that connect WebSocket to a
+// different host than the page (e.g. static frontend on Vercel, API on Render) where cookies
+// are not sent cross-origin.
+func SessionJWTForWebSocket(c echo.Context) (*jwt.Token, error) {
+	if ck, err := c.Cookie("DnB-Session"); err == nil && ck.Value != "" {
+		tok, err := token.ParseSession(ck.Value)
+		if err == nil && tok.Valid {
+			return tok, nil
+		}
+	}
+	q := strings.TrimSpace(c.QueryParam("token"))
+	if q == "" {
+		return nil, echo.NewHTTPError(http.StatusUnauthorized, "missing session")
+	}
+	tok, err := token.ParseSession(q)
+	if err != nil || !tok.Valid {
+		return nil, echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired session")
+	}
+	return tok, nil
 }

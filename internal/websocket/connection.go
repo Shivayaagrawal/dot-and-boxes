@@ -250,14 +250,14 @@ var upgrader = websocket.Upgrader{
 
 // ServeWs handles WebSocket connections.
 func (m *Manager) ServeWs(c echo.Context) error {
-	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
+	userToken, err := httpsession.SessionJWTForWebSocket(c)
 	if err != nil {
-		slog.Error("WebSocket upgrade failed", slog.Any("error", err))
 		return err
 	}
 
-	userToken, err := httpsession.SessionJWT(c)
+	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
+		slog.Error("WebSocket upgrade failed", slog.Any("error", err))
 		return err
 	}
 
