@@ -1,0 +1,11 @@
+FROM node:24-alpine
+
+RUN apk add --no-cache wget
+
+WORKDIR /app
+
+COPY docker-entrypoint-dev.sh /usr/local/bin/docker-entrypoint-dev.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint-dev.sh
+
+ENTRYPOINT ["docker-entrypoint-dev.sh"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]

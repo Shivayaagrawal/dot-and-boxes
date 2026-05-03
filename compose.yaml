@@ -1,0 +1,113 @@
+services:
+  db:
+    image: postgres:17.5
+    container_name: dnb_pg
+    environment:
+      POSTGRES_USER: ${DATABASEUSER}
+      POSTGRES_PASSWORD: ${DATABASEPASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    # Host port omitted if local Postgres already uses 5432; use `ports: "5433:5432"` for host access
+
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d
+
+  backend1:
+    build: .
+    expose:
+      - "8484"
+    ports:
+      - "6060:6060"
+      # Go API + WebSocket on the host (enables `cd web && npm run dev` with Vite proxy)
+      - "8484:8484"
+    env_file:
+      - .env
+    # Ensure the app always targets the Compose Redis service (overrides a host-only .env).
+    environment:
+      REDIS_ADDR: redis:6379
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    restart: on-failure
+  # backend2:
+  #   build: .
+  #   expose:
+  #     - "8484"
+  #   env_file:
+  #     - .env
+
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+
+  #   restart: on-failure
+
+  redis:
+    image: "redis:latest"
+    container_name: dnb-redis-pubsub
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # Host ports -> container 6379 (6381 per README for local `go run`; 6379 for tests/tools).
+    ports:
+      - "127.0.0.1:6381:6379"
+      - "127.0.0.1:6379:6379"
+
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+    container_name: dnb-frontend-react-vite
+    expose:
+      - "5173"
+    # Dev ergonomics: Vite’s default URL works from the host (otherwise only Caddy :80 / :8080 works).
+    ports:
+      - "127.0.0.1:5173:5173"
+    environment:
+      DOCKER_COMPOSE: "1"
+      # Vite `/api` proxy target inside the Compose network (127.0.0.1 would be wrong here).
+      VITE_DEV_API_URL: http://backend1:8484
+    volumes:
+      - ./web:/app
+      - frontend_node_modules:/app/node_modules
+    healthcheck:
+      test:
+        ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 180s
+  caddy:
+    image: caddy:2
+    container_name: dnb-caddy
+    ports:
+      - "80:80"
+      # If port 80 is already in use, open http://localhost:8080 instead
+      - "8080:80"
+      
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend1:
+        condition: service_started
+
+volumes:
+  caddy_data:
+  caddy_config:
+  frontend_node_modules:

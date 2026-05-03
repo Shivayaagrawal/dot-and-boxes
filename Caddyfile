@@ -1,0 +1,18 @@
+:80 {
+    encode gzip
+    
+    header {
+        Content-Security-Policy "default-src 'self'; script-src 'self' https://analytics.ahrefs.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' http://127.0.0.1:7616 https://analytics.ahrefs.com https://cloudflareinsights.com; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none'"
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"  
+        X-Forwarded-Proto {scheme}
+        X-Real-IP {remote_host}
+        X-Forwarded-For {remote_host}
+    }
+    
+    reverse_proxy /api/v1/* backend1:8484
+    reverse_proxy /ws/* backend1:8484
+    reverse_proxy frontend:5173
+}

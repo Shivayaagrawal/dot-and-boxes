@@ -1,0 +1,51 @@
+import { Player } from "@/types/websocket";
+import styles from "./SendInviteModal.module.css";
+
+interface SendInviteModalProps {
+  selectedPlayer: Player | undefined;
+  boardSize: number;
+  onBoardSizeChange: (size: number) => void;
+  onSendInvite: () => void;
+  onClose: () => void;
+}
+const SendInviteModal: React.FC<SendInviteModalProps> = ({
+  selectedPlayer,
+  boardSize,
+  onBoardSizeChange,
+  onSendInvite,
+  onClose,
+}) => {
+  if (!selectedPlayer) return null;
+
+  return (
+    <>
+      <div className={styles.modal}>
+        <h4>Send Game Invite</h4>
+        <p>
+          Are you sure you want to send a game invite to{" "}
+          {selectedPlayer.username}?
+        </p>
+        <div>
+          <label htmlFor="boardSize">Board Size: </label>
+          <input
+            type="number"
+            id="boardSize"
+            value={boardSize}
+            onChange={(e) => {
+              onBoardSizeChange(parseInt(e.target.value));
+            }}
+            min={5}
+            max={10}
+            style={{ marginLeft: "10px", width: "50px" }}
+          />
+        </div>
+        <button onClick={onSendInvite}>Send Invite</button>
+        <button onClick={onClose}>Cancel</button>
+      </div>
+
+      <div onClick={onClose} className={styles.overlay} />
+    </>
+  );
+};
+
+export default SendInviteModal;
