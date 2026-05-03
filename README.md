@@ -18,11 +18,18 @@ A full-stack, real-time implementation of the Dots and Boxes game. This project 
 
 **Frontend**
 * React
+* pixy.js
 * SVG-based board rendering
 * Real-time updates via WebSockets
 
 **Database**
 * Postgres: persistent storage for users, game state, and chat history
+
+**Hosting Platform**
+* Reddis: Upstash
+* Backend: Render
+* Frontend : Vercel
+  
 
 
 **Infrastructure**
