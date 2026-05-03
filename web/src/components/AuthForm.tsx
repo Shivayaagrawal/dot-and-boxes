@@ -75,7 +75,16 @@ export function AuthForm({
       return err.response.data.message;
     }
     if (axios.isAxiosError(err) && typeof err.response?.data === "string") {
-      return err.response.data;
+      const raw = err.response.data;
+      if (/^\s*<!DOCTYPE html/i.test(raw) || /<\/html>\s*$/i.test(raw)) {
+        return "Could not reach the game server. If you are on Vercel, check that /api is rewritten to your Render backend (see vercel.json).";
+      }
+      if (raw.length > 280) {
+        return err.response?.status === 404
+          ? "Game server returned 404 — API URL or proxy may be misconfigured."
+          : "The server returned an unexpected response.";
+      }
+      return raw;
     }
     if (err instanceof Error) {
       return err.message;

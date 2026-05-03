@@ -12,7 +12,6 @@ import {
   createRootRouteWithContext,
   Link,
   Outlet,
-  useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { HeadContent } from "@tanstack/react-router";
@@ -28,18 +27,13 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function Root() {
   const auth = useAuth();
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [splashDismissedUi, setSplashDismissedUi] = useState(
     () => isDeploySplashComplete(),
   );
 
-  const isAuthEntryPath =
-    pathname === "/login" || pathname === "/register";
-
-  // Splash is hidden on login/register so those pages stay usable. We intentionally do *not*
-  // mark the splash "complete" just for visiting those routes — otherwise after sign-in,
-  // `/play` would never show the Pixi loading console in that tab (common localhost flow).
-  const showDeploySplash = !splashDismissedUi && !isAuthEntryPath;
+  // Show the deploy loading console on every first paint (including /login) until the user
+  // finishes it once per tab — same as production “loading → then app” flow.
+  const showDeploySplash = !splashDismissedUi;
 
   const onDeploySplashDone = () => {
     markDeploySplashComplete();
