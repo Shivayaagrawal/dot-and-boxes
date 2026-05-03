@@ -1,4 +1,9 @@
 {
+  "build": {
+    "env": {
+      "VITE_WS_ORIGIN": "https://dot-and-boxes-0lto.onrender.com"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/:path*",
